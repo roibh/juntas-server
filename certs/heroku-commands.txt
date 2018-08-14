@@ -1,0 +1,1 @@
+heroku certs:add example.crt example.key --type sni

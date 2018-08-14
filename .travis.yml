@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - "node"
+  - "10"
+before_deploy: "mv .gitignore ..gitignore" 
+deploy:
+  provider: heroku
+  api_key:
+    secure: "4a63897d-e32c-400a-9563-8ef938c5f8c5"
+  app:
+    master: juntas
+    staging: juntas

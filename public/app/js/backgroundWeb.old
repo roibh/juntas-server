@@ -1,0 +1,944 @@
+﻿/// <reference path="../../../typings/browser.d.ts" />
+/// <reference path="../../../typings/juntas.d.ts" />
+var Notification: any;
+var responseFillData: any;
+
+
+namespace backgrounds {
+    var _self: backgroundWeb;
+
+
+
+
+
+
+    class backgroundWeb {
+        socket: any = {};
+        activeVideoWindow: any = null;
+        socketsInitialized: boolean = false;
+        juntasServer: string = "";
+
+        config: any = {};
+        juntastabs: any = {};
+        juntaswindows: any = [];
+        logger: any = null;
+        emittimeout: any;
+        constructor() {
+            _self = this;
+            this.initSocketEvents();
+
+        }
+        public handleMessage(request: any, sender: any, sendResponse: any) {
+
+            this.initSocketEvents();
+            var user = this.getUser();
+
+            switch (request.command) {
+                case "config loaded":
+                    this.config = request.config;
+                    sendResponse({ "result": "ok" });
+                    break;
+                case "juntastabs":
+                    sendResponse(this.juntastabs);
+                    break;
+                case "pop url":
+                    chrome.tabs.update(sender.tab.id, { url: request.url }, () => {
+                    })
+                    break;
+                case "pop member":
+                    this.socket.emit('pop member', request.tabid, sender.tab.url, request.userid);
+                    break;
+                case "tab create":
+                    var tabKey = "TAB" + request.tab._id;
+                    this.juntastabs[tabKey] = request.tab;
+                    this.socket.emit('tab create', this.juntastabs[tabKey]);
+                    var xtab = this.juntastabs[tabKey];
+                    var lastUrl = "";
+                    chrome.browserAction.setIcon({ path: "../icons/icon48_on.png" });
+                    if (request.activeTab.url.indexOf("chrome:") > -1) {
+                        this.juntastabs[tabKey].lastUrl = this.juntasServer + "/juntify/start?j=" + this.juntastabs[tabKey]._id;
+                    }
+                    else {
+                        this.juntastabs[tabKey].lastUrl = request.activeTab.url;
+                    }
+                    chrome.tabs.update(this.juntastabs[tabKey].TabId, { url: this.juntastabs[tabKey].lastUrl }, () => { });
+                    //socket.emit('tab navigate', { TabId: juntastabs[tabKey]._id, Url: request.activeTab.url, UserId: user._id });
+                    //chrome.tabs.sendMessage(juntastabs[tabKey].TabId, { command: "show sidebar", tab: juntastabs[tabKey] }, function (response) {
+                    //    sendResponse({ "result": "ok" });
+                    //});
+                    break;
+                case "insert tab":
+                    var tabKey = "TAB" + request.tab._id;
+                    this.juntastabs[tabKey] = request.tab;
+                    break;
+                case "tab connect":
+
+
+                    responseFillData = sendResponse;
+                    if (user === null) {
+                        var url = chrome.extension.getURL('popup.html');
+                        chrome.windows.create({ url: url, type: 'panel' });
+                        sendResponse({ "result": "nouser" });
+                        return;
+                    }
+                    var tab = request.activeTab;
+                    var tabKey = "TAB" + request.tab._id;
+                    this.juntastabs[tabKey] = request.tab;
+
+                    var xtab = this.juntastabs[tabKey];
+                    xtab.SidebarUiMode == 0
+                    this.socket.emit('tab connect', this.juntastabs[tabKey], user._id);
+                    chrome.browserAction.setIcon({ path: "../icons/icon48_on.png" });
+
+
+                    if (this.juntastabs[tabKey].UserId !== user._id) {
+                        if (this.juntastabs[tabKey].History !== undefined && this.juntastabs[tabKey].History.length > 0) {
+                            var movingUrl = "";
+
+                            if (this.juntastabs[tabKey].History.length == 1)
+                                movingUrl = this.juntastabs[tabKey].History[0].Url;
+                            else {
+                                var arr = this.juntastabs[tabKey].History.sort((a: any, b: any) => {
+                                    // Turn your strings into dates, and then subtract them
+                                    // to get a value that is either negative, positive, or zero.
+                                    a = new Date(a.Date);
+                                    b = new Date(b.Date);
+                                    return b - a;
+                                });
+
+
+                                movingUrl = arr[0].Url;
+                            }
+                            chrome.tabs.update(this.juntastabs[tabKey].TabId, { url: movingUrl }, () => {
+                                this.fillMyTab(xtab._id, this.juntastabs[tabKey].TabId, () => {
+                                    sendResponse({ "result": "ok" });
+                                });
+                            });
+                        } else {
+                            this.fillMyTab(xtab._id, this.juntastabs[tabKey].TabId, () => {
+                                sendResponse({ "result": "ok" });
+                            });
+                        }
+                    }
+                    else {
+                        xtab.lastUrl = tab.url;
+                        this.socket.emit('tab navigate', { TabId: xtab._id, Url: tab.url, UserId: user._id });
+                        this.fillMyTab(xtab._id, this.juntastabs[tabKey].TabId, () => {
+                            //var url = chrome.extension.getURL('app/sidebar.html');
+                            //chrome.windows.create({ url: url, type: 'normal' });
+                            //chrome.windows.create({ url: url, type: 'popup' });
+                            //chrome.windows.create({ url: url, type: 'popup' });
+                            //chrome.windows.create({ url: url, type: 'panel' });
+                            // chrome.windows.create({ url: url, type: 'panel', state: 'docked' });
+                            //chrome.tabs.sendMessage(this.juntastabs[tabKey].TabId, { command: "show sidebar", tab: xtab }, function (response) {
+                            //    responseFillData = sendResponse;
+                            //    sendResponse({ "result": "ok" });
+
+                            //});
+                            sendResponse({ "result": "ok" });
+                        });
+                    }
+                    break;
+                case "fill data":
+
+                    var tabKey = "TAB" + request.tabid;
+                    var tabid = sender.tab.id;
+                    this.juntastabs[tabKey].load = false;
+                    if (sender.tab !== undefined)
+                        this.juntastabs[tabKey].TabId = sender.tab.id;
+                    responseFillData = sendResponse;
+                    this.fillMyTab(this.juntastabs[tabKey]._id, this.juntastabs[tabKey].TabId, () => { });
+                    //var r = new XMLHttpRequest();
+                    //r.open("GET", "http://juntas.zapto.org/tabs/fillmytab?_id=" + request.tabid, true);
+                    //r.onreadystatechange = function () {
+                    //    if (r.readyState != 4 || r.status != 200) return;
+                    //    juntastabs[tabKey] = JSON.parse(r.responseText);
+                    //    if (sender.tab !== undefined)
+                    //        juntastabs[tabKey].TabId = tabid;
+                    //    juntastabs[tabKey].dirty = true;
+                    //    chrome.browserAction.setIcon({ path: "icons/icon48_on.png" });
+                    //    return true;
+                    //};
+                    //r.send("_id=" + request.tabid);
+                    break;
+                case "get tabs":
+                    sendResponse({ "result": this.juntastabs });
+                    break;
+                case "get isactive":
+                    var t = this.juntastabsById(request.tab.id);
+                    sendResponse({ "result": t });
+                    break;
+
+                case "get rtc":
+                    {
+                        let t = this.juntastabs["TAB" + request.hostingTab];
+                        if (t !== null && t.rtcmessages !== undefined && t.rtcmessages.length > 0) {
+
+                            var rtcmessages = t.rtcmessages;
+                            var res = false;
+                            sendResponse({
+                                "result": res,
+                                "url": "",
+                                "tab": t,
+                                "messages": rtcmessages
+                            });
+                            t.rtcmessages = [];
+                        }
+                        else {
+                            sendResponse({
+                                "result": res,
+                                "url": "",
+                                "tab": t,
+
+                            });
+                        }
+
+                    }
+                    break;
+                case "get isdirty":
+                    {
+                        var messages: any = [];
+                        let t = this.juntastabsById(sender.tab.id);
+                        var res = false;
+                        var smalldirty = false;
+                        if (t !== null) {
+                            res = (t.dirty == true);
+                            this.juntastabs["TAB" + t._id].dirty = false;
+                            messages = t.messages;
+                            smalldirty = (t.smalldirty == true);
+                            this.juntastabs["TAB" + t._id].smalldirty = false;
+
+                        }
+
+
+
+                        sendResponse({
+                            "result": res,
+                            "smalldirty": smalldirty,
+                            "url": sender.tab.url,
+                            "tab": t, "messages": messages
+
+                        });
+
+                        if (t !== null) {
+                            t.messages = [];
+                        }
+
+                    }
+                    break;
+                case "delete tab":
+                    delete this.juntastabs["TAB" + request.tab._id];
+                    break;
+                case "scroll tab":
+
+                    clearTimeout(this.emittimeout);
+                    this.emittimeout = setTimeout(() => {
+                        var user = this.getUser();
+                        if (user !== null) {
+
+                            var t = this.juntastabsById(sender.tab.id);
+                            this.socket.emit('page scroll', t._id, user._id, request.details);
+                        }
+                    }, 200)
+                    break;
+                case "get isjuntas":
+                    var t = this.juntastabsById(sender.tab.id);
+                    sendResponse({ "result": t !== null, tabid: sender.tab.id });
+                    break;
+                case "collapse sidebar":
+                    var script = "juntasInstance()";
+
+
+                    var t = this.juntastabsById(sender.tab.id);
+                    chrome.tabs.sendMessage(t.TabId, { command: "toggle sidebar", operation: request.operation, tab: t }, function (response) {
+
+                        sendResponse({ "result": "ok" });
+
+                    });
+
+                    //chrome.tabs.executeScript(sender.tab.id, { code: script },
+                    //    function (data) {
+                    //    });
+                    break;
+                case "set logger":
+                    chrome.tabs.executeScript(sender.tab.id, { file: "js/logger.js", "runAt": "document_start" },
+                        function (data) {
+                        });
+                    break;
+                case "set juntas":
+                    var t = this.juntastabsById(sender.tab.id);
+                    sendResponse({ "result": t !== null });
+                    break;
+                //  chrome.tabs.update(this.selectedTab.id, { url: this.navData.Map.Url }, function () {
+                // })
+                case "get tabdata":
+
+                    var t = this.juntastabsById(sender.tab.id);
+
+                    if (t !== null)
+                        if (this.juntaswindows.indexOf(sender.tab.windowId) < 0)
+                            this.juntaswindows.push(sender.tab.windowId);
+                    //t.dirty = false;
+                    sendResponse({ "result": t });
+                    break;
+                case "post message":
+                    var user = this.getUser();
+                    if (user !== null) {
+
+                        var t = this.juntastabsById(sender.tab.id);
+                        t.Followers[user._id].isTyping = false;
+                        t.smalldirty = true;
+                        this.socket.emit('post message', t._id, user._id, request.message);
+                        sendResponse({ "result": t });
+                    }
+                    break;
+                case "frame poll":
+                    var t = this.juntastabsById(sender.tab.id);
+                    sendResponse({ "result": t });
+                    break;
+                case "delete history":
+                    var t = this.juntastabsById(sender.tab.id);
+                    this.socket.emit('delete history', t._id, user._id, request._id);
+                    break;
+                case "like url":
+                    var t = this.juntastabsById(sender.tab.id);
+                    this.socket.emit('like url', t._id, user._id, request.hash, 5, 'text');
+                    break;
+                case "webrtc offer":
+
+                    var offer: any = request.offer;
+                    //this.juntastabs[tabKey] = request.tab;
+                    var user = this.getUser();
+                    if (user !== null) {
+
+
+                        this.socket.emit('webrtc send offer', request.hostingTab, user._id, request.offer);
+                    }
+                    break;
+                case "webrtc offer accepted":
+                    var offer: any = request.offer;
+                    //this.juntastabs[tabKey] = request.tab;
+                    //var user = localStorage.getItem("juntasuser");
+                    // if (user !== null) {
+
+                    var t = this.juntastabs["TAB" + request.hostingTab];
+
+                    if (t.UserId !== user._id) {
+
+
+                        this.socket.emit('webrtc send answer', request.hostingTab, t.UserId, request.offer);
+                    }
+                    //  }
+                    break;
+                case "pop video":
+                    //var t = this.juntastabsById(sender.tab.id);
+                    chrome.windows.onRemoved.addListener((windowId: number) => {
+
+                        if (this.activeVideoWindow !== null && this.activeVideoWindow.id == windowId)
+                            this.activeVideoWindow = null
+
+                    })
+                    chrome.tabs.getSelected((selectedTab) => {
+                        var tab = this.juntastabsById(selectedTab.id);
+
+                        if (this.activeVideoWindow === null) {
+
+                            chrome.windows.create({
+                                width: 400,
+                                height: 560,
+                                top: 0,
+                                left: 0,
+                                'tabId': selectedTab.id,
+                                'type': 'popup',
+                                'state': 'docked',
+                                'url': chrome.extension.getURL('app/video.html') + '#/' + tab._id
+                            }, (window: any) => {
+                                this.activeVideoWindow = window;
+                                sendResponse({ "result": window });
+
+                            });
+                        } else {
+
+
+                        }
+
+                    });
+
+                    break;
+                case "webrtc ice candidate":
+                    var ice: any = request.ice;
+                    //this.juntastabs[tabKey] = request.tab;
+                    //var user = localStorage.getItem("juntasuser");
+                    // if (user !== null) {
+                    var t = this.juntastabs["TAB" + request.hostingTab];
+                    this.socket.emit('webrtc ice candidate', request.hostingTab, t.UserId, request.ice);
+                    //  }
+                    break;
+                case "user is typing":
+                    var user = this.getUser();
+                    if (user !== null) {
+                        var tab = this.juntastabsById(sender.tab.id);
+                        this.socket.emit('user is typing', tab._id, user._id);
+                    }
+                    break;
+
+                case "spawnNotification":
+                    var t = this.juntastabsById(sender.tab.id);
+                    var tabkey = "TAB" + t._id;
+                    this.spawnNotification(request.msg.commentObject.comment.Message, request.msg.commentUser.Picture.data.url, request.msg.commentUser.FirstName + " " + request.msg.commentUser.LastName, sender.tab.id, () => {
+                        this.juntastabs[tabkey].NewCommentCount = "0";
+                        this.juntastabs[tabkey].smalldirty = true;
+                        this.juntastabs[tabkey].messages.push({ "type": "focus", });
+
+                    });
+
+                    break;
+            }
+
+        }
+        public user: any = null;
+        public onFacebookLogin() {
+            var successURL: string = 'www.facebook.com/connect/login_success.html';
+            if (!localStorage.getItem('accessToken')) {
+                chrome.tabs.query({}, function (tabs) { // get all tabs from every window
+                    for (var i = 0; i < tabs.length; i++) {
+                        if (tabs[i].url.indexOf(successURL) !== -1) {
+                            // below you get string like this: access_token=...&expires_in=...
+                            var params = tabs[i].url.split('#')[1];
+                            // in my extension I have used mootools method: parseQueryString. The following code is just an example ;)
+                            var accessToken = params.split('&')[0];
+                            accessToken = accessToken.split('=')[1];
+                            localStorage.setItem('accessToken', accessToken);
+                            chrome.tabs.remove(tabs[i].id);
+                        }
+                    }
+                });
+            }
+        }
+        public imagecCickHandler(e: any) {
+            var user = _self.getUser();
+            if (user !== null) {
+                chrome.tabs.getSelected((selectedTab) => {
+                    var tab = _self.juntastabsById(selectedTab.id);
+                    console.trace(tab);
+
+
+                    _self.socket.emit('tab navigate', { TabId: tab._id, Url: e.srcUrl, UserId: user._id });
+                });
+            }
+        };
+
+
+        public pageClickHandler(e: any) {
+
+            var user = _self.getUser();
+            if (user !== null) {
+                chrome.tabs.getSelected((selectedTab) => {
+
+                    var tabid = e.menuItemId.replace("TAB", "").replace("ContextMenu", "");// TAB570db8c046fe8b0300c7f215ContextMenu
+
+
+                    _self.socket.emit('tab navigate', { TabId: tabid, Url: selectedTab.url, UserId: user._id });
+                });
+            }
+        };
+
+
+        public fillMyTab(id: string, tabid: number, callback: Function) {
+            var tabKey = "TAB" + id;
+
+            var r = new XMLHttpRequest();
+            r.open("GET", this.juntasServer + "/tabs/fillmytab?_id=" + id, true);
+            r.onreadystatechange = () => {
+                if (r.readyState != 4 || r.status != 200) return;
+                this.juntastabs[tabKey] = JSON.parse(r.responseText);
+                this.juntastabs[tabKey].TabId = tabid;
+                this.juntastabs[tabKey].dirty = true;
+                chrome.browserAction.setIcon({ path: "../icons/icon48_on.png" });
+                return callback();
+            };
+            r.send("_id=" + id);
+        }
+        public juntastabsById(id: number) {
+            for (var x in this.juntastabs) {
+                if (this.juntastabs[x].TabId == id)
+                    return this.juntastabs[x];
+            }
+            return null;
+        }
+
+        public initSocketEvents() {
+
+
+            if (!this.socketsInitialized) {
+                this.socket = io(this.juntasServer);
+                //this.socket =new WebSocket(this.juntasServer);
+                var user = this.getUser();
+                if (user !== null) {
+                    this.socket.emit('juntas connect', { UserId: user._id });
+                }
+                else {
+
+                    user = this.getAnonimusUser();
+
+                    this.socket.emit('juntas connect', { UserId: user._id, ano: true });
+                }
+
+                this.socket.on('tab connected', (navData: juntas.navData) => {
+
+                    var tabkey = "TAB" + navData.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        if (this.juntastabs[tabkey].Followers === undefined || this.juntastabs[tabkey].Followers.length > 0)
+                            this.juntastabs[tabkey].Followers = {};
+                        this.juntastabs[tabkey].Followers[navData.User._id] = navData.User;
+                        this.juntastabs[tabkey].Followers[navData.User._id].online = true;
+
+                        if (user._id !== navData.User._id) {
+                            this.spawnNotification("user online", navData.User.Picture.data.url, navData.User.FirstName + " " + navData.User.LastName, navData.TabId);
+
+                        }
+
+                        if (!this.juntastabs[tabkey].messages)
+                            this.juntastabs[tabkey].messages = [];
+
+                        this.juntastabs[tabkey].dirty = true;
+                        this.juntastabs[tabkey].messages.push({ "type": "update_user_states", "data": this.juntastabs[tabkey].Followers });
+
+
+                    }
+                });
+                this.socket.on('image captured', (navData: juntas.navData) => {
+                    var tabkey = "TAB" + navData.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        this.juntastabs[tabkey].dirty = true;
+                        if (this.juntastabs[tabkey].reloads === undefined)
+                            this.juntastabs[tabkey].reloads = [];
+                        this.juntastabs[tabkey].reloads.push(navData.FileName);
+                        var tab = this.juntastabs[tabkey];
+                        for (var i = 0; i < tab.History.length; i++) {
+                            if (tab.History[i].Thumb == navData.FileName) {
+                                var d = new Date();
+                                tab.History[i].Thumb = tab.History[i].Thumb + "?" + d.getTime();
+                            }
+                        }
+                    }
+                });
+                this.socket.on('delete history', (navData: juntas.navData) => {
+                    var tabkey = "TAB" + navData.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        for (var i = 0; i < this.juntastabs[tabkey].History.length; i++) {
+                            if (this.juntastabs[tabkey].History[i]._id === navData._id) {
+                                this.juntastabs[tabkey].History.splice(i, 1);
+                                this.juntastabs[tabkey].dirty = true;
+                            }
+                        }
+                    }
+                });
+                this.socket.on('page scroll', (navData: juntas.scrollData) => {
+                    var tabkey = "TAB" + navData.TabId; //we'll need to fix this one
+                    if (this.juntastabs[tabkey] !== undefined && this.juntastabs[tabkey].UserId !== user._id) {
+                        chrome.tabs.executeScript(this.juntastabs[tabkey].TabId, { code: "window.scrollTo(0, " + navData.details.top + ");" }, function (data) {
+                        });
+                    }
+                });
+                this.socket.on('webrtc offer accepted', (navData: juntas.offerData) => {
+                    console.trace(user);
+                    console.trace(navData);
+                    var tabkey = "TAB" + navData.TabId; //we'll need to fix this one
+                    if (this.juntastabs[tabkey] !== undefined && this.juntastabs[tabkey].UserId === user._id) {
+                        if (!this.juntastabs[tabkey].rtcmessages)
+                            this.juntastabs[tabkey].rtcmessages = [];
+                        this.juntastabs[tabkey].rtcmessages.push({ "type": "video_offer_accepted", "data": navData })
+                    };
+                });
+                this.socket.on('webrtc ice candidate', (iceData: juntas.iceData) => {
+
+                    var tabkey = "TAB" + iceData.TabId;
+                    if (this.juntastabs[tabkey] !== undefined && this.juntastabs[tabkey].UserId !== user._id) {
+                        var tabid = this.juntastabs[tabkey].TabId;
+                        if (!this.juntastabs[tabkey].rtcmessages)
+                            this.juntastabs[tabkey].rtcmessages = [];
+                        this.juntastabs[tabkey].rtcmessages.push({ "type": "ice_candidate", "data": iceData });
+                    }
+                });
+                this.socket.on('webrtc create offer', (navData: juntas.offerData) => {
+
+                    var tabkey = "TAB" + navData.TabId; //we'll need to fix this one
+
+                    if (navData.offer.type !== 'answer') {
+
+                        if (this.juntastabs[tabkey] !== undefined && this.juntastabs[tabkey].UserId !== user._id) {
+                            var tabid = this.juntastabs[tabkey].TabId;
+                            this.spawnNotification("video call", null, 'Video chat', tabid, (tabId: number) => {
+
+                                chrome.windows.onRemoved.addListener((windowId: number) => {
+
+                                    if (this.activeVideoWindow !== null && this.activeVideoWindow.id == windowId)
+                                        this.activeVideoWindow = null
+
+                                })
+
+
+                                if (!this.juntastabs[tabkey].rtcmessages)
+                                    this.juntastabs[tabkey].rtcmessages = [];
+
+
+
+                                if (this.activeVideoWindow === null) {
+
+                                    this.juntastabs[tabkey].rtcmessages.push({ "type": "video_offer", "data": navData });
+                                    chrome.windows.create({
+                                        width: 400,
+                                        height: 560,
+                                        top: 0,
+                                        left: 0,
+                                        'tabId': tabid,
+                                        'type': 'popup',
+                                        'state': 'docked',
+                                        'url': chrome.extension.getURL('app/video.html') + '#/' + navData.TabId
+                                    }, (window: any) => {
+
+                                        this.activeVideoWindow = window;
+
+
+                                        //sendResponse({ "result": window });
+
+                                    });
+
+                                }
+
+
+
+
+                                //chrome.runtime.sendMessage({ command: "pop video" },  (response)=> {
+
+
+                                //});
+
+
+
+                            })
+                        }
+                    }
+                    else {
+                        this.juntastabs[tabkey].rtcmessages.push({ "type": "video_answer", "data": navData });
+                    }
+                    //if (this.juntastabs[tabkey] !== undefined && this.juntastabs[tabkey].UserId !== user._id) {
+                    //    chrome.tabs.executeScript(this.juntastabs[tabkey].TabId, { code: "window.scrollTo(0, " + navData.details.top + ");" }, function (data) {
+                    //    });
+                    //}
+                });
+                this.socket.on('tab navigate', (navData: juntas.navData) => {
+
+                    var tabkey = "TAB" + navData.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        var tabid = this.juntastabs[tabkey].TabId;
+                        chrome.tabs.get(this.juntastabs[tabkey].TabId, (selectedTab) => {
+                            if (this.juntastabs[tabkey].History === undefined)
+                                this.juntastabs[tabkey].History = [];
+                            //if (this.juntastabs[tabkey].History.length == 0
+                            //    //|| this.juntastabs[tabkey].History[this.juntastabs[tabkey].History.length - 1].Url != navData.Map.Url
+                            //) {
+
+                            //}
+
+                            var found = false;
+                            for (var i = 0; i < this.juntastabs[tabkey].History.length; i++) {
+                                if (this.juntastabs[tabkey].History[i].Url === navData.Map.Url) {
+
+                                    found = true;
+                                    break;
+                                }
+
+                            }
+
+
+
+                            if (!found)
+                                this.juntastabs[tabkey].History.push(navData.Map);
+
+                            this.juntastabs[tabkey].dirty = true;
+
+
+
+
+                            var user = this.getUser();
+                            if (user !== null) {
+
+                                if (this.juntastabs[tabkey].UserId !== user._id) {
+                                    this.spawnNotification(navData.Map.Url, this.imageurl(navData.Map.Thumb, 'url_images'), 'Moving along', tabid);
+                                    chrome.tabs.update(selectedTab.id, { url: navData.Map.Url }, function () {
+                                    })
+                                }
+                            }
+                        });
+                    }
+                });
+
+
+
+                this.socket.on('public tab navigate', (navData: juntas.navData) => {
+
+
+                    var tabkey = "TAB" + navData.TabId;
+
+                    //(angular.element("#Starter").scope() as any).latestHistory.push(navData.Map);
+                    (angular.element("#Starter").scope() as any).$apply(function ($scope) {
+                        $scope.latestHistory.push(navData.Map);
+                    })
+                });
+
+                this.socket.on('pop member', (navData: juntas.navData) => {
+                    var tabkey = "TAB" + navData.TabId;
+                    //chrome.notifications.create("xxxx", { "TemplateType": "basic" }, function () { });
+                    //test localstorage
+                    var d = localStorage.getItem(tabkey);
+                    if (d === null)
+                        return;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        var tabid = this.juntastabs[tabkey].TabId;
+                        this.spawnNotification(navData.Map.Url, this.juntasServer + "/url_images/" + navData.Map.Thumb, 'Openning new tab', navData.TabId)
+                    }
+                    if (d !== null) {
+                        d = JSON.parse(d);
+                        if (!d.AllowPop)
+                            return;
+                    }
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        var user = this.getUser();
+                        if (user !== null) {
+
+                            navData.Map.isHistory = true;
+                            this.juntastabs[tabkey].History.push(navData.Map);
+                            this.juntastabs[tabkey].dirty = true;
+                            if (this.juntastabs[tabkey].UserId !== user._id) {
+                                chrome.tabs.get(this.juntastabs[tabkey].TabId, function (selectedTab) {
+                                    chrome.tabs.update(selectedTab.id, { url: navData.Map.Url }, function () {
+                                    })
+                                });
+                            }
+                        }
+                    }
+                    else {
+                        chrome.tabs.create({ "url": navData.Map.Url, "active": true }, function (tab) {
+                            this.juntastabs[tabkey] = { "_id": navData.TabId, TabId: tab.id, load: true, dirty: true };
+                        });
+                    }
+                });
+                this.socket.on('commentAdded', (commentObject: juntas.comment, msg: any) => {
+                    console.trace("comment aded");
+
+
+
+                    var tabkey = "TAB" + commentObject.tabid;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        if (this.juntastabs[tabkey].NewCommentCount === undefined)
+                            this.juntastabs[tabkey].NewCommentCount = 0;
+                        if (this.juntastabs[tabkey].Comments === undefined)
+                            this.juntastabs[tabkey].Comments = [];
+                        var user = this.getUser();
+                        if (user !== null) {
+
+                            //if (commentObject.comment.UserId !== user._id) {
+                            this.juntastabs[tabkey].NewCommentCount++;
+                            var commentUser = this.juntastabs[tabkey].Followers[commentObject.comment.UserId];
+                            commentUser.isTyping = false;
+                            this.juntastabs[tabkey].smalldirty = true;
+
+                            if (!this.juntastabs[tabkey].messages)
+                                this.juntastabs[tabkey].messages = [];
+
+
+                            this.juntastabs[tabkey].messages.push({
+                                "type": "comment_added", "commentObject": commentObject, "commentUser": commentUser
+                            });
+
+                            //this.juntastabs[tabkey].dirty = true;
+
+
+                            chrome.tabs.executeScript(this.juntastabs[tabkey].TabId, { code: "if(!document.orgtitle) document.orgtitle = document.title;document.title = '(" + this.juntastabs[tabkey].NewCommentCount + ") ' + document.orgtitle" });
+                            //chrome.tabs.update(juntastabs[tabkey].TabId, { "title": "new comments(" + juntastabs[tabkey].NewCommentCount +")" }, function (tab) {
+                            //});
+                            //}
+                        }
+                        //commentObject.comment.isNew = true;
+                        //for (var i = 0; i < this.juntastabs[tabkey].Comments.length; i++) {
+                        //    this.juntastabs[tabkey].Comments[i].isNew = false;
+                        //}
+
+                        //this.juntastabs[tabkey].Comments.push(commentObject.comment);
+                        commentObject.comment.isComment = true;
+
+
+
+
+
+
+                        //chrome.runtime.sendMessage({ command: "commentAdded" }, function (response) {
+                        //    //sendResponse({"Result": true});
+                        //});
+                    }
+                });
+
+                this.socket.on('like url', (updateObject: juntas.tabUpdate, msg: any) => {
+                    var tabkey = "TAB" + updateObject.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        var histories = this.juntastabs[tabkey].History;
+                        for (var x = 0; x < histories.length; x++) {
+                            if (histories[x].hash == updateObject.hash) {
+                                if (!histories[x].Likes) {
+                                    histories[x].Likes = [];
+                                }
+                                histories[x].Likes.push(updateObject.Map);
+                            }
+
+                        }
+                        this.juntastabs[tabkey].dirty = true;
+                    }
+                });
+
+
+
+                this.socket.on('user is typing', (updateObject: juntas.scrollData) => {
+                    var tabkey = "TAB" + updateObject.TabId;
+                    if (this.juntastabs[tabkey] !== undefined) {
+                        if (this.juntastabs[tabkey].Followers === undefined || this.juntastabs[tabkey].Followers.length > 0)
+                            this.juntastabs[tabkey].Followers = {};
+
+                        this.juntastabs[tabkey].Followers[updateObject.UserId].isTyping = true;
+                        setTimeout(() => {
+                            this.juntastabs[tabkey].Followers[updateObject.UserId].isTyping = false;
+                            this.juntastabs[tabkey].smalldirty = true;
+                        }, 1000 * 10);
+                        this.juntastabs[tabkey].dirty = true;
+                    };
+
+                });
+
+
+
+                this.socket.on('disconnect', () => {
+                    //Doesn't fire the "connect" callback
+                    var user = this.getUser();
+                    this.socket = io.connect(this.juntasServer);
+                    if (user !== null) {
+                        this.socket.emit('juntas connect', { UserId: user._id });
+                    }
+                    else {
+
+                        user = this.getAnonimusUser();
+
+                        this.socket.emit('juntas connect', { UserId: user._id, ano: true });
+                    }
+
+
+
+                });
+
+                this.socketsInitialized = true;
+            }
+            return this.socket;
+        }
+        public imageurl(input: string, folder: string) {
+            if (input.indexOf("http") > -1)
+                return input;
+            else if (input.indexOf("//") == 0)
+                return "http:" + input;
+            else {
+                return this.juntasServer + "/" + folder + "/" + input;
+            }
+        }
+        public spawnNotification(theBody: string, theIcon: string, theTitle: string, tabId: number, callback: Function = undefined) {
+            var options = {
+                body: theBody,
+                icon: theIcon
+            }
+            var n = new Notification(theTitle, options);
+
+            if (callback) {
+                n.onclick = (x: any) => {
+
+                    chrome.windows.getCurrent(function (window) {
+
+                        window.focused = true;
+                        chrome.tabs.update(tabId, { highlighted: true });
+                    });
+
+
+                    n.close();
+                    chrome.tabs.executeScript(tabId, { code: "document.title = document.orgtitle;" });
+                    if (callback) {
+                        callback(tabId);
+                    }
+
+                };
+            }
+            if (!callback) {
+
+                setTimeout(n.close.bind(n), 4000);
+            }
+
+        }
+
+
+
+
+        public getAnonimusUser() {
+            if (this.user !== null)
+                return this.user;
+
+            else {
+                var user = localStorage.getItem("anonimusjuntasuser");
+
+                if (user !== null) {
+                    user = JSON.parse(user);
+
+
+                }
+                else {
+                    user = { _id: guid() }
+                    localStorage.setItem("anonimusjuntasuser", JSON.stringify(user));
+
+                }
+                this.user = user;
+                return user;
+            }
+        }
+
+        public getUser() {
+            if (this.user !== null)
+                return this.user;
+
+            else {
+                var user = localStorage.getItem("juntasuser");
+
+                if (user !== null) {
+                    user = JSON.parse(user);
+
+
+                }
+                this.user = user;
+                return user;
+            }
+        }
+    }
+
+
+
+    var bg1: backgroundWeb = new backgroundWeb();
+
+}
+
+
+function S4() {
+    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+}
+function guid() {
+    return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0, 3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+
+}
+
+
+
+
+
