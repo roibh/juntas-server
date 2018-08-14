@@ -1,0 +1,146 @@
+﻿:host {
+    --app-primary-color: #4285f4;
+    --app-secondary-color: black;
+    display: block;
+}
+
+iron-image {
+    fill: var(--icon-toggle-color, rgba(0, 0, 0, 0));
+    stroke: var(--icon-toggle-outline-color, currentcolor);
+}
+
+paper-card .header {
+    height: 225px !important;
+}
+
+app-header {
+    color: #fff;
+    background-color: var(--app-primary-color);
+    position: fixed;
+    z-index: 2000;
+    width: 100%;
+}
+
+    app-header paper-icon-button {
+        --paper-icon-button-ink-color: white;
+    }
+
+.drawer-list {
+    margin: 0 20px;
+}
+
+    .drawer-list a {
+        display: block;
+        padding: 0 16px;
+        text-decoration: none;
+        color: var(--app-secondary-color);
+        line-height: 40px;
+    }
+
+.loadingIndicator {
+    font-size: 16px;
+    text-align: center;
+    height: 60px;
+}
+
+    .loadingIndicator paper-spinner {
+        margin-right: 20px;
+        vertical-align: middle;
+    }
+
+.drawer-list a.iron-selected {
+    color: black;
+    font-weight: bold;
+}
+
+.searchInput {
+    @apply(--layout-flex);
+    font-size: 18px;
+    padding: 10px 20px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    -webkit-appearance: none;
+    border-radius: 0px;
+}
+
+    .searchInput:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .searchInput:focus {
+        background-color: white;
+        outline: none;
+        color: black;
+    }
+
+.loadingIndicator {
+    font-size: 16px;
+    text-align: center;
+    height: 60px;
+}
+
+    .loadingIndicator paper-spinner {
+        margin-right: 20px;
+        vertical-align: middle;
+    }
+
+.card-content {
+    @apply(--layout);
+    background-color: rgba(207, 253, 129, 0.26);
+    font-size: 16px;
+}
+
+iron-list {
+    margin-top: 90px;
+    padding-bottom: 16px;
+}
+
+paper-card {
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.photoContent {
+    @apply(--layout);
+    background-color: #ddd;
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 8px;
+}
+
+    .photoContent:hover .detail {
+        opacity: 1;
+    }
+
+    .photoContent > iron-image {
+        @apply(--layout-flex);
+    }
+
+    .photoContent > .detail {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 100%);
+        color: white;
+        font-size: 20px;
+        font-weight: 100;
+        padding: 20px;
+        opacity: 0;
+        transition: opacity 0.1s;
+    }
+
+paper-card .header,
+.header {
+    height: 169px;
+}
+
+.header {
+    height: 225px;
+}
+
+.img-rounded {
+    border-radius: 6px;
+}

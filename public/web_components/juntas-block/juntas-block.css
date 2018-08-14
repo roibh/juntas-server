@@ -1,0 +1,168 @@
+
+
+iron-image {
+    fill: var(--icon-toggle-color, rgba(0, 0, 0, 0));
+    stroke: var(--icon-toggle-outline-color, currentcolor);
+}
+
+paper-card .header {
+    height: 225px !important;
+}
+
+app-header {
+    color: #fff;
+    background-color: var(--app-primary-color);
+    position: fixed;
+    z-index: 2000;
+    width: 100%;
+}
+
+    app-header paper-icon-button {
+        --paper-icon-button-ink-color: white;
+    }
+
+.drawer-list {
+    margin: 0 20px;
+}
+
+    .drawer-list a {
+        display: block;
+        padding: 0 16px;
+        text-decoration: none;
+        color: var(--app-secondary-color);
+        line-height: 40px;
+    }
+
+.loadingIndicator {
+    font-size: 16px;
+    text-align: center;
+    height: 60px;
+}
+
+    .loadingIndicator paper-spinner {
+        margin-right: 20px;
+        vertical-align: middle;
+    }
+
+.drawer-list a.iron-selected {
+    color: black;
+    font-weight: bold;
+}
+
+ 
+
+    
+
+.loadingIndicator {
+    font-size: 16px;
+    text-align: center;
+    height: 60px;
+}
+
+    .loadingIndicator paper-spinner {
+        margin-right: 20px;
+        vertical-align: middle;
+    }
+
+.card-content {
+ 
+    background-color: rgba(152, 180, 224, 0.26);
+    font-size: 14px;
+    font-weight: 600;
+}
+ 
+
+paper-card {
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.photoContent {
+    @apply(--layout);
+    background-color: #ddd;
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 8px;
+}
+
+    .photoContent:hover .detail {
+        opacity: 1;
+    }
+
+    .photoContent > iron-image {
+        @apply(--layout-flex);
+    }
+
+    .photoContent > .detail {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 100%);
+        color: white;
+        font-size: 20px;
+        font-weight: 100;
+        padding: 20px;
+        opacity: 0;
+        transition: opacity 0.1s;
+    }
+
+paper-card .header,
+.header {
+    height: 169px;
+}
+
+.header {
+    height: 225px;
+}
+
+.img-rounded {
+    border-radius: 6px;
+}
+
+paper-card.white {
+    --paper-card-header-color: #fff;
+}
+
+paper-card .header iron-image {
+    height: 169px;
+}
+
+paper-card .header {
+    height: 169px;
+}
+
+paper-input-autocomplete {
+    width: 100%;
+}
+
+.header {
+    height: 225px;
+}
+
+iron-image,
+iron-image /deep/ img {
+    display: block;
+    width: 100%;
+}
+
+.preload iron-image {
+    width: 150px;
+    height: 150px;
+    background: #ddd;
+}
+
+
+.card-actions label 
+{
+    float: left;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.card-actions .tab-name 
+{
+    font-weight: bold;
+ font-size: 12px;
+}

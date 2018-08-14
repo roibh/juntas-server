@@ -1,0 +1,22 @@
+<link rel="import" href="/web_components/paper-input-autocomplete.html">
+
+<dom-module id="juntas-search">
+	<template>
+		<style>
+			<!-- inject:style --> <!-- endinject -->
+		</style>
+
+		
+		<iron-ajax id="searchAjax" auto loading="{{loadingData}}" url="[[_loadSearchItems(searchText)]]" params='{"order":"1"}' handle-as="json"
+			on-response="_didReceiveSearchResponse"></iron-ajax>
+		<div class="layout horizontal" flex>
+			<paper-input-autocomplete input-value="{{searchText}}" value="{{_loadMetaBody}}" id="searchInput" type="search" label="{{searchPlaceholder}}"
+				search-property="Title" search-value="Url" data-selected="true" class="flex"></paper-input-autocomplete>
+			<paper-icon-button icon="search" align="right"></paper-icon-button>
+		</div>
+	</template>
+	<script>
+        <!-- inject:script -->
+        <!-- endinject -->
+    </script>
+</dom-module>
