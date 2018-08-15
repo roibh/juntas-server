@@ -40,3 +40,4 @@ bower_components/
  
 server/**/*.js
 server/**/*.js.map
+.nyc_output/

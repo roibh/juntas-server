@@ -12,7 +12,8 @@
     "build": "tsc",
     "watch": "tsc -w && npm start",
     "start": "node master.js",
-    "test": "npm run build && npm run test-unit",
+    "test": "nyc --reporter=lcov --reporter=html npm run xtest && nyc report",
+    "xtest": "npm run build && alsatian tests/*.spec.js",
     "cover": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
     "test-unit": "mocha tests --recursive --reporter spec"
   },
@@ -65,7 +66,7 @@
     "socket.io": "^1.7.3",
     "socket.io-redis": "^1.1.1",
     "stream-browserify": "^2.0.1",
-    "typescript": "^2.7.2",
+    "typescript": "^2.9.0",
     "uuid": "^3.0.1",
     "webshot": "^0.18.0"
   },

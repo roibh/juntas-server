@@ -1,6 +1,6 @@
 
 import { Method, MethodConfig, MethodError, MethodResult, Verbs, Body, Query, Param } from '@methodus/server';
-import { resolve } from 'path';
+ 
 
 
 var util = require('util');

@@ -5,12 +5,7 @@ module.exports = {
     "proport": "80",
     "appRoot": "/",
     "defaultPage": "public/index.html",
-    "env": {
-        "NODE_ENV": "production",
-        "AWS_ACCESS_KEY_ID": "AKIAJJQG5GURO5TMIAHA",
-        "AWS_SECRET_ACCESS_KEY": "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",
-        "S3_BUCKET": "juntas"
-    },
+   
     "database": {
         "mongodb": {
             "useObjectId": true,

@@ -8,7 +8,7 @@ import * as blogsRoute from './blogs';
 
 module.exports = function (app: any) {
     contentRoute.appRoute(app);
-    userRoute.appRoute(app);
+   // userRoute.appRoute(app);
     monitorRoute.appRoute(app);
     tabsRoute.appRoute(app);
     JuntifyRoute.appRoute(app);
