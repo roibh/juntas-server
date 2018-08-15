@@ -1,6 +1,6 @@
 
 import { Method, MethodConfig, MethodError, MethodResult, Verbs, Body, Query, Param } from '@methodus/server';
- 
+
 
 
 var util = require('util');
@@ -9,6 +9,7 @@ var path = require('path');
 var dal = require("@nodulus/data");
 var ObjectID = require("mongodb").ObjectID;
 var moment = require('moment');
+ 
 
 
 // app.route("/user/feed").post(Route.feed);
@@ -27,7 +28,7 @@ var moment = require('moment');
 @MethodConfig('User')
 export class User {
     @Method(Verbs.Post, '/user/feed')
-    public async feed(@Body('aaaa') body) {
+    public static async feed(@Body('aaaa') body) {
         var UserId = body.UserId;
         const db = await dal.connect();
         const arr = await db.collection("Tabs").find({ "UserId": UserId }).toArray();
@@ -35,7 +36,7 @@ export class User {
 
     }
     @Method(Verbs.Get, '/user/:userid')
-    public async oauth(@Param('userid') UserId) {
+    public static async oauth(@Param('userid') UserId) {
 
         const db = await dal.connect();
         const arr = await db.collection("Tabs").find({ "UserId": UserId }).toArray();
@@ -45,7 +46,7 @@ export class User {
 
 
     @Method(Verbs.Post, '/user/oauth')
-    public async oauth_post(@Body() body: any) {
+    public static async oauth_post(@Body() body: any) {
         if (!body)
             throw new MethodError('bad request', 400);
 
@@ -86,7 +87,7 @@ export class User {
     }
 
     @Method(Verbs.Post, '/user/facebook')
-    public async facebook(@Body() body: any) {
+    public static async facebook(@Body() body: any) {
 
         var query = "SELECT * FROM Users WHERE Uid=@Uid;";
         let users = await dal.query(query, { "Uid": body.Uid });
@@ -124,7 +125,7 @@ export class User {
 
 
     @Method(Verbs.Post, '/user/login')
-    public async login(@Body() body) {
+    public static async login(@Body() body) {
 
         //var api_token = req.headers["api_key"];
         //var device_id = req.headers["device_id"];
@@ -181,7 +182,7 @@ export class User {
 
 
     @Method(Verbs.Post, '/user/logout')
-    public async logout(@Body() body) {
+    public static async logout(@Body() body) {
 
         //if (api_token !== global.api_token) {
         //    res.status(403).json({ "error": { message: "api_token is invalid" } });
@@ -204,7 +205,7 @@ export class User {
     }
 
     @Method(Verbs.Post, '/user/register')
-    public async register(@Body() body) {
+    public static async register(@Body() body) {
 
         // Convert our form input into JSON ready to store in Couchbase
         var jsonVersion = "{}";//returnJSONResults("", "");//JSON.stringify(req.body);
@@ -289,7 +290,7 @@ export class User {
 
 
 
-    public mapRooms(user: any) {
+    public static mapRooms(user: any) {
         var query = "SELECT * FROM Tabs WHERE Followers in @Followers";
         dal.query(query, { "Followers": [user._id] }, function (items: any) {
             for (var i = 0; i < items.length; i++) {

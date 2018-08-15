@@ -2,7 +2,7 @@ import { AsyncTest, Expect, Test, TestCase, TestFixture, Timeout, TeardownFixtur
 
 import * as Data from './data';
 import { User } from '../server/controllers/user';
-
+var dal = require("@nodulus/data");
 
 
 const enum Mutations {
@@ -47,8 +47,8 @@ export class TestsOfUser {
     @TestCase(Data.newUser)
     @Timeout(10000)
     public async registerFail(userMutation) {
-        const controller = new User();
-        const result = await controller.register(userMutation)
+
+        const result = await User.register(userMutation)
 
         //const alteredUser = mutate(await getUser(LEVEL.INTERNAL), userMutation);
         Expect(result).toBeDefined();
@@ -57,8 +57,8 @@ export class TestsOfUser {
     @TestCase(Data.newUserNew)
     @Timeout(10000)
     public async register(userMutation) {
-        const controller = new User();
-        const result = await controller.register(userMutation)
+
+        const result = await User.register(userMutation)
 
         //const alteredUser = mutate(await getUser(LEVEL.INTERNAL), userMutation);
         Expect(result).toBeDefined();
@@ -136,6 +136,13 @@ export class TestsOfUser {
 
     @AsyncTeardownFixture
     public async CleanUp() {
+
+
+        var query = "DELETE * FROM Users WHERE Email=@Email";
+        const deleteResult = await dal.query(query, {
+            "Email": Data.newUserNew.Email
+        });
+        Expect(deleteResult.result.ok).toBe(1);
         // const db = await DBHandler.getConnection('default');
         // const result = await db.collection('Message').remove({ 'TEST': true });
         // Expect(result).toBeDefined();

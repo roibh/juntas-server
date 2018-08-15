@@ -9,6 +9,6 @@ export const newUser = {
 export const newUserNew = {
     FirstName: 'Roi',
     LastName: 'Ben haim',
-    Email: 'roi.benhaimxxx@gmail.com',
+    Email: 'tester@gmail.com',
     Password: '1234'
 }

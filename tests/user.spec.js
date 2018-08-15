@@ -20,6 +20,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const alsatian_1 = require("alsatian");
 const Data = require("./data");
 const user_1 = require("../server/controllers/user");
+var dal = require("@nodulus/data");
 var Mutations;
 (function (Mutations) {
     Mutations[Mutations["UID"] = 0] = "UID";
@@ -56,20 +57,23 @@ function guid() {
 let TestsOfUser = class TestsOfUser {
     registerFail(userMutation) {
         return __awaiter(this, void 0, void 0, function* () {
-            const controller = new user_1.User();
-            const result = yield controller.register(userMutation);
+            const result = yield user_1.User.register(userMutation);
             alsatian_1.Expect(result).toBeDefined();
         });
     }
     register(userMutation) {
         return __awaiter(this, void 0, void 0, function* () {
-            const controller = new user_1.User();
-            const result = yield controller.register(userMutation);
+            const result = yield user_1.User.register(userMutation);
             alsatian_1.Expect(result).toBeDefined();
         });
     }
     CleanUp() {
         return __awaiter(this, void 0, void 0, function* () {
+            var query = "DELETE * FROM Users WHERE Email=@Email";
+            const deleteResult = yield dal.query(query, {
+                "Email": Data.newUserNew.Email
+            });
+            alsatian_1.Expect(deleteResult.result.ok).toBe(1);
         });
     }
 };
